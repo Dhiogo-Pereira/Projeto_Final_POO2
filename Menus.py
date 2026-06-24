@@ -24,7 +24,7 @@ class Stm_Menus:
             for l in funcionarios:         # Ve se a lista tem um gerente
                 value = list(l.values())   #
                 for k in value:
-                    if type(k) == G:       # Se não tiver, entra no modo
+                    if type(k) == G:           # Se não tiver, entra no modo
                         mode = "tem gerente"   # configuração de sistema.
 
             if mode != "tem gerente":
