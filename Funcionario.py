@@ -23,10 +23,10 @@ class Gerente(Funcionarios):
                 if nome in lista_func:
                     print("Nome de funcionario ja em uso.") #Procura o nome na lista de funcionarios
                 else: break
-
         except ValueError:
             print("Cancelando")
             return None
+
 
         try:
             cpf = str(input("CPF:\n> "))
@@ -87,16 +87,15 @@ class Gerente(Funcionarios):
                 return None
 
             if tipo == "gerente":
-                nome = Gerente(nome, senha, cpf)
+                nome = Gerente(nome.title(), senha, cpf)
             else:
-                nome = Funcionarios(nome, senha, cpf)
+                nome = Funcionarios(nome.title(), senha, cpf)
         else:
-            nome = Gerente(nome, senha, cpf)
+            nome = Gerente(nome.title(), senha, cpf) #Config
 
-        lista_func.append({nome.nome:nome})    # Coloca um dicionario com nome e classe
-        print("Funcionario adicionado.")         # na lista de funcionarios a ser retornada
+        lista_func.append(nome)           # Coloca um dicionario com nome e classe
+        print("Funcionario adicionado.")  # na lista de funcionarios a ser retornada
         return lista_func
-
 
 
 
