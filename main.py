@@ -2,19 +2,15 @@
 main.py — Ponto de entrada do sistema hoteleiro
 ════════════════════════════════════════════════
 Responsabilidade: criar o DataStore, injetar nos controllers
-e iniciar a aplicação. Nada mais.
-
-Para trocar a camada de dados basta alterar a linha do DataStore:
-  from repository.sqlite_store import SQLiteDataStore
-  store = SQLiteDataStore("hotel.db")
+e iniciar a aplicação.
 """
 
-from repository.data_store import DataStore
+from repository.data_store import SQLiteDataStore
 from controllers.app_controller import AppController
 
 
 def main():
-    store = DataStore()
+    store = SQLiteDataStore()
     app = AppController(store)
     app.run()
 
