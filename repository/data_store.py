@@ -29,6 +29,10 @@ class SQLiteDataStore:
     # ── Criação do esquema ────────────────────────────────────────
     def _criar_tabelas(self) -> None:
         with self._conn:
+            """
+            Utilizando with direto na conexão, o python faz o commit e o rollback (caso necessário),
+            automaticamente. Salvando e garantindo que erros não quebre o programa.
+            """
             self._conn.executescript("""
                 CREATE TABLE IF NOT EXISTS funcionarios (
                     id    INTEGER PRIMARY KEY AUTOINCREMENT,
