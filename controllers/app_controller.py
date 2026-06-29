@@ -51,9 +51,9 @@ class AppController:
 
     # ── Menu principal pós-login ──────────────────────────────────
     def _menu_principal(self, usuario) -> None:
-        is_gerente = isinstance(usuario, Gerente)
+        is_gerente = isinstance(usuario, Gerente) # Ele retorna se o objeto usuario é instância da classe Gerente
         while True:
-            opcao = MenuView.menu_principal(is_gerente)
+            opcao = MenuView.menu_principal(is_gerente) # Chama o menu passando como parâmetro o valor bool obtido acima
 
             if opcao == "1":
                 self.cliente.cadastrar()
