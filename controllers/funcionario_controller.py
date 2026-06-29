@@ -37,6 +37,9 @@ class FuncionarioController:
         """
         nome, cpf = FuncionarioView.prompt_cadastro()
 
+        if not nome:        # usuário cancelou o diálogo
+            return False
+
         if self.db.buscar_funcionario_por_nome(nome):
             MenuView.erro(f"Já existe um funcionário com o nome '{nome}'.")
             return False
@@ -44,23 +47,29 @@ class FuncionarioController:
         # Loop de senha com validação
         while True:
             senha, confirma = FuncionarioView.prompt_senha()
+
+            if senha is None:   # usuário cancelou
+                return False
+
             if senha != confirma:
                 MenuView.erro("As senhas não coincidem.")
                 continue
+
             valido, msg = self._validar_senha(senha)
             if valido:
                 break
             MenuView.erro(msg)
 
         # Tipo de conta
+        # O Combobox em prompt_tipo() usa state="readonly", então o valor
+        # retornado é sempre válido. O while foi removido para evitar
+        # janelas repetidas desnecessárias.
         if modo_config:
             tipo = "gerente"
         else:
-            while True:
-                tipo = FuncionarioView.prompt_tipo()
-                if tipo in ["gerente", "funcionario"]:
-                    break
-                MenuView.erro("Tipo inválido. Escolha 'gerente' ou 'funcionario'.")
+            tipo = FuncionarioView.prompt_tipo()
+            if tipo not in ("gerente", "funcionario"):
+                tipo = "funcionario"    # fallback de segurança
 
         novo = Gerente(nome, cpf, senha) if tipo == "gerente" else Funcionario(nome, cpf, senha)
         self.db.adicionar_funcionario(novo)
