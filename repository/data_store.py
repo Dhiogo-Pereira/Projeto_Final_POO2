@@ -35,11 +35,11 @@ class SQLiteDataStore:
             """
             self._conn.executescript("""
                 CREATE TABLE IF NOT EXISTS funcionarios (
-                    id    INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nome  TEXT    NOT NULL UNIQUE,
-                    cpf   TEXT    NOT NULL,
-                    senha TEXT    NOT NULL,
-                    tipo  TEXT    NOT NULL DEFAULT 'funcionario'
+                    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                    nome       TEXT    NOT NULL UNIQUE,
+                    cpf        TEXT    NOT NULL,
+                    senha_hash TEXT    NOT NULL,
+                    tipo       TEXT    NOT NULL DEFAULT 'funcionario'
                 );
 
                 CREATE TABLE IF NOT EXISTS clientes (
@@ -74,7 +74,9 @@ class SQLiteDataStore:
     @staticmethod
     def _to_funcionario(row) -> Funcionario:
         cls = Gerente if row["tipo"] == "gerente" else Funcionario
-        return cls(row["nome"], row["cpf"], row["senha"])
+        # row["senha_hash"] já é o hash "salt$hash" — passamos direto
+        # para o construtor.
+        return cls(row["nome"], row["cpf"], row["senha_hash"])
 
     @staticmethod
     def _to_cliente(row) -> Cliente:
@@ -103,8 +105,8 @@ class SQLiteDataStore:
     def adicionar_funcionario(self, funcionario) -> None:
         with self._conn:
             self._conn.execute(
-                "INSERT INTO funcionarios (nome, cpf, senha, tipo) VALUES (?, ?, ?, ?)",
-                (funcionario.nome, funcionario.cpf, funcionario.senha, funcionario.tipo),
+                "INSERT INTO funcionarios (nome, cpf, senha_hash, tipo) VALUES (?, ?, ?, ?)",
+                (funcionario.nome, funcionario.cpf, funcionario.senha_hash, funcionario.tipo),
             )
 
     def remover_funcionario(self, funcionario) -> None:

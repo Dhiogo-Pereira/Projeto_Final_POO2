@@ -17,7 +17,15 @@ class FuncionarioController:
     # ── Validação de senha (regra de negócio) ─────────────────────
     @staticmethod
     def _validar_senha(senha: str) -> tuple[bool, str]:
-        """Retorna (valido, mensagem_de_erro)."""
+        """
+        Retorna (valido, mensagem_de_erro).
+
+        IMPORTANTE: esta validação roda ANTES do hash, sobre a senha
+        em texto puro que acabou de ser digitada — é a única etapa em
+        que faz sentido olhar para o conteúdo da senha (tamanho,
+        maiúsculas, dígitos, símbolos). Depois desse ponto, a senha
+        em texto puro é descartada e só o hash circula pelo sistema.
+        """
         if len(senha) < 8:
             return False, "Senha muito curta (mínimo 8 caracteres)."
         if senha.islower() or senha.isupper():
@@ -71,7 +79,15 @@ class FuncionarioController:
             if tipo not in ("gerente", "funcionario"):
                 tipo = "funcionario"    # fallback de segurança
 
-        novo = Gerente(nome, cpf, senha) if tipo == "gerente" else Funcionario(nome, cpf, senha)
+        # ── Ponto-chave da correção de segurança ────────────────
+        # Usamos os classmethods `.criar(...)` em vez de chamar o
+        # construtor diretamente. `.criar()` recebe a senha em texto
+        # puro (`senha`), gera o hash com salt internamente (em
+        # models/usuario.py) e devolve o objeto já com `senha_hash`
+        # preenchido. A variável `senha` em texto puro nunca chega
+        # ao banco de dados — só serve para a validação acima e para
+        # ser hasheada aqui.
+        novo = Gerente.criar(nome, cpf, senha) if tipo == "gerente" else Funcionario.criar(nome, cpf, senha)
         self.db.adicionar_funcionario(novo)
         MenuView.sucesso(f"Funcionário '{nome}' [{tipo}] cadastrado com sucesso.")
         return True
