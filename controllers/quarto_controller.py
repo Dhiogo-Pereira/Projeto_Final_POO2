@@ -29,7 +29,18 @@ class QuartoController:
                 MenuView.erro(f"Quarto {numero} já existe.")
                 return False
 
-        novo = Quarto(numero, tipo, preco)
+        try:
+            # Quarto(...) agora valida numero/tipo/preco_diaria nos seus
+            # próprios setters (ver models/quarto.py) — a checagem de
+            # tipo acima já cobre a maioria dos casos, mas o try/except
+            # aqui é a rede de segurança para qualquer outra violação
+            # de regra que a classe decida impor no futuro (ex.: preço
+            # <= 0), sem que o controller precise conhecer os detalhes.
+            novo = Quarto(numero, tipo, preco)
+        except ValueError as e:
+            MenuView.erro(str(e))
+            return False
+
         self.db.adicionar_quarto(novo)
         MenuView.sucesso(f"Quarto {numero} ({tipo}) cadastrado. Diária: R$ {preco:.2f}")
         return True

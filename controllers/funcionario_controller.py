@@ -79,15 +79,16 @@ class FuncionarioController:
             if tipo not in ("gerente", "funcionario"):
                 tipo = "funcionario"    # fallback de segurança
 
-        # ── Ponto-chave da correção de segurança ────────────────
-        # Usamos os classmethods `.criar(...)` em vez de chamar o
-        # construtor diretamente. `.criar()` recebe a senha em texto
-        # puro (`senha`), gera o hash com salt internamente (em
-        # models/usuario.py) e devolve o objeto já com `senha_hash`
-        # preenchido. A variável `senha` em texto puro nunca chega
-        # ao banco de dados — só serve para a validação acima e para
-        # ser hasheada aqui.
-        novo = Gerente.criar(nome, cpf, senha) if tipo == "gerente" else Funcionario.criar(nome, cpf, senha)
+        try:
+            # `.criar(...)` recebe a senha em texto puro, gera o hash
+            # com salt internamente e devolve o objeto pronto — ver
+            # models/usuario.py. O construtor também valida nome/cpf
+            # não-vazios (encapsulamento), então cobrimos com try/except.
+            novo = Gerente.criar(nome, cpf, senha) if tipo == "gerente" else Funcionario.criar(nome, cpf, senha)
+        except ValueError as e:
+            MenuView.erro(str(e))
+            return False
+
         self.db.adicionar_funcionario(novo)
         MenuView.sucesso(f"Funcionário '{nome}' [{tipo}] cadastrado com sucesso.")
         return True
@@ -113,7 +114,14 @@ class FuncionarioController:
                 if self.db.buscar_funcionario_por_nome(novo_nome):
                     MenuView.erro("Nome já em uso.")
                     return
-                alvo.nome = novo_nome
+                try:
+                    # `alvo.nome = novo_nome` passa pelo setter de
+                    # Funcionario.nome (models/usuario.py), que valida
+                    # que o nome não é vazio antes de aceitar a troca.
+                    alvo.nome = novo_nome
+                except ValueError as e:
+                    MenuView.erro(str(e))
+                    return
                 self.db.atualizar_funcionario(alvo)
                 MenuView.sucesso("Funcionário atualizado.")
 

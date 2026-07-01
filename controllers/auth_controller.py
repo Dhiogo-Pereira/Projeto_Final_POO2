@@ -21,14 +21,9 @@ class AuthController:
         nome, senha = AuthView.prompt_login()
 
         for funcionario in self.db.listar_funcionarios():
-            # ── Correção de segurança ───────────────────────────
-            # Antes: `funcionario.senha == senha` comparava a senha
-            # digitada diretamente com o texto puro guardado no
-            # objeto. Agora o objeto nem guarda mais texto puro —
-            # guarda `senha_hash`. `verificar_senha()` recalcula o
-            # hash da senha digitada usando o mesmo salt armazenado
-            # e compara os hashes em tempo constante (hmac.compare_digest),
-            # evitando timing attacks.
+            # `funcionario.verificar_senha(senha)` recalcula o hash da
+            # senha digitada usando o mesmo salt armazenado e compara
+            # em tempo constante (hmac.compare_digest) — ver models/usuario.py.
             if funcionario.nome == nome and funcionario.verificar_senha(senha):
                 AuthView.login_sucesso(funcionario)
                 return funcionario
