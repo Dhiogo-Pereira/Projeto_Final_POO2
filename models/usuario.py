@@ -5,23 +5,9 @@ Contém as classes de domínio para os tipos de usuário do sistema.
 
 Segurança de senha
 ───────────────────
-As senhas NUNCA são armazenadas em texto puro. Usamos PBKDF2-HMAC-SHA256 com um
+As senhas NUNCA são armazenadas em texto puro. Usamos PBKDF2-HMAC-SHA256
+(função padrão da biblioteca `hashlib`, recomendada pelo NIST) com um
 salt aleatório gerado individualmente para cada usuário.
-
-Por que salt por usuário?
-  Sem salt, duas pessoas com a mesma senha gerariam o mesmo hash.
-  Com salt aleatório, cada hash é único mesmo para senhas iguais.
-
-Por que 100_000 iterações?
-  PBKDF2 aplica a função de hash repetidamente de propósito, para
-  tornar o cálculo lento o suficiente que tentar milhões de senhas
-  por segundo (força bruta) fique inviável, mas ainda rápido o
-  bastante para não incomodar um usuário legítimo fazendo login.
-
-Formato de armazenamento:
-  Guardamos uma única string "salt_hex$hash_hex" no banco. Assim não
-  precisamos de uma coluna extra só para o salt — e o hash final já
-  carrega tudo que é necessário para verificar a senha depois.
 """
 
 import hashlib
@@ -87,17 +73,60 @@ class Funcionario:
         IMPORTANTE: o parâmetro `senha_hash` espera o hash JÁ GERADO
         (formato "salt$hash"), não a senha em texto puro.
 
-        O construtor é usado tanto para criar um
-        funcionário novo quanto para reconstruir um funcionário a
-        partir de uma linha do banco (onde só existe o hash).
-
-        Para cadastrar um funcionário a partir de uma senha digitada
-        pelo usuário, use o classmethod `Funcionario.criar(...)`.
+        O construtor é usado tanto para criar um funcionário novo
+        quanto para reconstruir um funcionário a partir de uma linha
+        do banco (onde só existe o hash). Para cadastrar a partir de
+        uma senha digitada pelo usuário, use `Funcionario.criar(...)`.
         """
-        self.nome = nome
-        self.cpf = cpf
-        self.senha_hash = senha_hash
-        self.tipo = "funcionario"
+        self.nome = nome                        # passa pelo setter (valida)
+        self._cpf = self._validar_cpf(cpf)       # sem setter público — identidade fixa
+        self._senha_hash = senha_hash
+        self._tipo = "funcionario"
+
+    # ── nome: mutável, mas validado ────────────────────────────────
+    @property
+    def nome(self) -> str:
+        return self._nome
+
+    @nome.setter
+    def nome(self, valor: str):
+        if not valor or not valor.strip():
+            raise ValueError("Nome do funcionário não pode ser vazio.")
+        self._nome = valor.strip()
+
+    # ── cpf: identidade do registro, imutável após a criação ───────
+    @property
+    def cpf(self) -> str:
+        return self._cpf
+
+    @staticmethod
+    def _validar_cpf(cpf: str) -> str:
+        if not cpf or not cpf.strip():
+            raise ValueError("CPF do funcionário não pode ser vazio.")
+        return cpf.strip()
+
+    # ── senha: só leitura direta; escrita só via redefinir_senha ───
+    @property
+    def senha_hash(self) -> str:
+        return self._senha_hash
+
+    def redefinir_senha(self, senha_texto: str) -> None:
+        """
+        Única forma permitida de trocar a senha de fora da classe.
+        Garante que o que fica armazenado é sempre um hash — nunca
+        é possível, por engano, atribuir texto puro a `senha_hash`
+        porque esse atributo não tem setter público.
+        """
+        self._senha_hash = gerar_hash_senha(senha_texto)
+
+    def verificar_senha(self, senha_texto: str) -> bool:
+        """Confere a senha digitada no login contra o hash armazenado."""
+        return verificar_senha(senha_texto, self._senha_hash)
+
+    # ── tipo: só leitura ─────────────────────────────────────────────
+    @property
+    def tipo(self) -> str:
+        return self._tipo
 
     @classmethod
     def criar(cls, nome: str, cpf: str, senha_texto: str):
@@ -108,17 +137,12 @@ class Funcionario:
 
         Graças ao uso de `cls` (em vez de `Funcionario` fixo), esta
         mesma implementação funciona corretamente para a subclasse
-        Gerente também — cls.criar(...) chamado em Gerente devolve
-        um Gerente.
+        Gerente também — `Gerente.criar(...)` devolve um Gerente.
         """
         return cls(nome, cpf, gerar_hash_senha(senha_texto))
 
-    def verificar_senha(self, senha_texto: str) -> bool:
-        """Confere a senha digitada no login contra o hash armazenado."""
-        return verificar_senha(senha_texto, self.senha_hash)
-
     def __repr__(self):
-        return f"Funcionario(nome={self.nome!r}, cpf={self.cpf!r})"
+        return f"Funcionario(nome={self._nome!r}, cpf={self._cpf!r})"
 
 
 class Gerente(Funcionario):
@@ -126,7 +150,7 @@ class Gerente(Funcionario):
 
     def __init__(self, nome: str, cpf: str, senha_hash: str):
         super().__init__(nome, cpf, senha_hash)
-        self.tipo = "gerente"
+        self._tipo = "gerente"
 
     def __repr__(self):
-        return f"Gerente(nome={self.nome!r}, cpf={self.cpf!r})"
+        return f"Gerente(nome={self._nome!r}, cpf={self._cpf!r})"

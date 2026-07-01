@@ -66,6 +66,10 @@ class AluguelController:
 
         # 5. Criar objeto e exibir resumo
         try:
+            # Aluguel(...) valida internamente o tipo de serviço e as
+            # datas (data_fim > data_inicio) antes de calcular o valor
+            # — ver models/aluguel.py. Todos os campos do objeto criado
+            # ficam somente-leitura a partir daqui.
             reserva = Aluguel(cliente, quarto, inicio, fim, tipo_servico)
         except ValueError as e:
             MenuView.erro(str(e))
@@ -78,9 +82,12 @@ class AluguelController:
             return False
 
         # 6. Persistir
-        quarto.disponivel = False
+        quarto.disponivel = False          # passa pelo setter de Quarto.disponivel
         self.db.adicionar_aluguel(reserva)
-        cliente.historico.append(reserva)
+        # Antes: cliente.historico.append(reserva) — mexia direto na lista
+        # interna do Cliente, furando o encapsulamento (ver models/cliente.py).
+        # Agora o próprio Cliente controla como seu histórico é alterado.
+        cliente.adicionar_reserva(reserva)
         MenuView.sucesso("Reserva registrada com sucesso.")
         return True
 

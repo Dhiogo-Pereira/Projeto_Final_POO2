@@ -2,9 +2,6 @@
 Model de Aluguel
 ────────────────
 Representa uma reserva/locação de quarto.
-O cálculo de valor fica aqui porque é uma regra de negócio
-intrínseca ao dado — não depende de entrada do usuário nem de
-persistência, apenas dos atributos do próprio objeto.
 """
 
 from datetime import date
@@ -28,28 +25,61 @@ class Aluguel:
         data_fim: date,
         tipo_servico: str = "basico",
     ):
-        self.cliente = cliente
-        self.quarto = quarto
-        self.data_inicio = data_inicio
-        self.data_fim = data_fim
-        self.tipo_servico = tipo_servico
-        self.valor = self._calcular_valor()
+        self._cliente = cliente
+        self._quarto = quarto
+        self._data_inicio = data_inicio
+        self._data_fim = data_fim
+        self._tipo_servico = self._validar_tipo_servico(tipo_servico)
+        self._valor = self._calcular_valor()
+
+    # ── Todos os campos são somente-leitura ──────────────────────────
+    @property
+    def cliente(self):
+        return self._cliente
+
+    @property
+    def quarto(self):
+        return self._quarto
+
+    @property
+    def data_inicio(self) -> date:
+        return self._data_inicio
+
+    @property
+    def data_fim(self) -> date:
+        return self._data_fim
+
+    @property
+    def tipo_servico(self) -> str:
+        return self._tipo_servico
+
+    @property
+    def valor(self) -> float:
+        return self._valor
+
+    @staticmethod
+    def _validar_tipo_servico(tipo: str) -> str:
+        if tipo not in MULTIPLICADORES:
+            raise ValueError(
+                f"Tipo de serviço inválido. Escolha: {', '.join(MULTIPLICADORES.keys())}"
+            )
+        return tipo
 
     # ── Lógica de domínio ─────────────────────────────────────────
     def _calcular_valor(self) -> float:
-        dias = (self.data_fim - self.data_inicio).days
+        dias = (self._data_fim - self._data_inicio).days
         if dias <= 0:
             raise ValueError("A data de fim deve ser posterior à data de início.")
-        multiplicador = MULTIPLICADORES.get(self.tipo_servico, 1.0)
-        return self.quarto.preco_diaria * dias * multiplicador
+        multiplicador = MULTIPLICADORES.get(self._tipo_servico, 1.0)
+        return self._quarto.preco_diaria * dias * multiplicador
 
     @property
     def duracao_dias(self) -> int:
-        return (self.data_fim - self.data_inicio).days
+        return (self._data_fim - self._data_inicio).days
 
     def __repr__(self):
         return (
-            f"Aluguel(cliente={self.cliente.nome!r}, "
-            f"quarto={self.quarto.numero}, "
-            f"valor=R${self.valor:.2f})"
+            f"Aluguel(cliente={self._cliente.nome!r}, "
+            f"quarto={self._quarto.numero}, "
+            f"valor=R${self._valor:.2f})"
         )

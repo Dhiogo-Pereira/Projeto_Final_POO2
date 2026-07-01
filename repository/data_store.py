@@ -75,7 +75,7 @@ class SQLiteDataStore:
     def _to_funcionario(row) -> Funcionario:
         cls = Gerente if row["tipo"] == "gerente" else Funcionario
         # row["senha_hash"] já é o hash "salt$hash" — passamos direto
-        # para o construtor.
+        # para o construtor, que NÃO re-hasheia (ver models/usuario.py).
         return cls(row["nome"], row["cpf"], row["senha_hash"])
 
     @staticmethod

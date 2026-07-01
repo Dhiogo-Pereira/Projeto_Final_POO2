@@ -21,7 +21,16 @@ class ClienteController:
             MenuView.erro(f"Já existe um cliente com o CPF '{cpf}'.")
             return False
 
-        novo = Cliente(nome, cpf, email)
+        try:
+            # Cliente(...) agora valida nome/cpf/email nos seus próprios
+            # setters (ver models/cliente.py). Se algo vier inválido —
+            # nome vazio, e-mail sem "@" etc. — a classe levanta
+            # ValueError em vez de aceitar um estado inconsistente.
+            novo = Cliente(nome, cpf, email)
+        except ValueError as e:
+            MenuView.erro(str(e))
+            return False
+
         self.db.adicionar_cliente(novo)
         MenuView.sucesso(f"Cliente '{nome}' cadastrado com sucesso.")
         return True
